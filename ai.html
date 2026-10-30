@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How Does ChatGPT Work? — Artificial Intelligence | Wait, How Does That Work?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+        --bg:#07080d;
+        --surface: #0f111a;
+        --surface-border: rgba(255, 255, 255, 0.08);
+        --surface-hover: rgba(255, 255, 255, 0.04);
+        --text-main: #f0f2f8;
+        --text-muted: #8b92a5;
+        --accent-gradient: linear-gradient(100deg, #5b5bf0, #19c6e0);
+        --accent-cyan: #19c6e0;
+        --accent-purple: #8b5cf6;
+        --accent-glow: rgba(25, 198, 224, 0.25);
+        --grid-line: rgba(255, 255, 255, 0.04);
+        --card-radius: 20px;
+        --btn-radius: 9999px;
+        --font-heading: 'Instrument Serif', Georgia, serif;
+        --font-body: 'Inter', -apple-system, Segoe UI, sans-serif;
+        --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #f3f2ee;
+      --surface: #ffffff;
+      --surface-border: rgba(0, 0, 0, 0.08);
+      --surface-hover: rgba(0, 0, 0, 0.02);
+      --text-main: #0e1017;
+      --text-muted: #62697b;
+      --accent-glow: rgba(91, 91, 240, 0.15);
+      --grid-line: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Reset & Base Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: var(--font-body);
+        background-color: var(--bg);
+        color: var(--text-main);
+        line-height: 1.6;
+        overflow-x: hidden;
+        min-height: 100vh;
+        transition: background-color 0.4s, color 0.4s;
+    }
+
+    /* Background and Grid */
+    .bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 20%, transparent 80%);
+    }
+
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+    }
+
+    .glow-1 {
+      width: 500px;
+      height: 500px;
+      background: #5b5bf0;
+      top: -100px;
+      left: 20%;
+    }
+
+    .glow-2 {
+      width: 450px;
+      height: 450px;
+      background: #19c6e0;
+      top: 400px;
+      right: -100px;
+    }
+
+    /* Layout Container */
+    .container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header Styles */
+    .nav-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(7, 8, 13, 0.7);
+      border-bottom: 1px solid var(--surface-border);
+      transition: background-color 0.4s ease;
+    }
+
+    [data-theme="light"] .nav-wrapper {
+      background: rgba(243, 242, 238, 0.8);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: transparent;
+      flex-shrink: 0;
+    }
+
+    .mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Progress Bar Styles */
+    .lesson-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      margin-top: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: var(--btn-radius);
+      font-size: 0.820rem;
+      font-weight: 500;
+      background: rgba(91, 91, 240, 0.1);
+      border: 1px solid rgba(91, 91, 240, 0.3);
+      color: #7b7bff;
+    }
+
+    [data-theme="light"] .pill-badge {
+      color: #4343d0;
+      background: rgba(91, 91, 240, 0.1);
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .progress-tracker {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background-color: var(--surface-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-gradient);
+      border-radius: 10px;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* HERO AND TITLE OF LESSON */
+    .lesson-header {
+      padding: 3rem 0 2rem;
+      text-align: center;
+    }
+
+    .lesson-title {
+      font-family: var(--font-body);
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02px;
+      margin-bottom: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .lesson-title em {
+      font-style: italic;
+      font-family: var(--font-heading);
+      font-weight: 400;
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      padding-right: 0.15em;
+    }
+
+    .lesson-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 630px;
+      margin: 0 auto;
+      font-weight: 400;
+    }
+
+    /* LESSON CONTENT STYLES */
+    .content-step {
+      margin: 4rem 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .content-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .step-number {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .step-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .step-body {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .step-body p {
+      margin-bottom: 1rem;
+    }
+
+    /* highlight box */
+    .callout-box {
+      background: var(--surface);
+      border-left: 4px solid var(--accent-cyan);
+      padding: 1.5rem;
+      border-radius: 0 16px 16px 0;
+      margin: 2rem 0;
+      border-top: 1px solid var(--surface-border);
+      border-right: 1px solid var(--surface-border);
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .callout-title {
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* real world examples */
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .example-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      transition: var(--transition-smooth);
+    }
+
+    .example-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .example-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .example-heading {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .example-description {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Check */
+    .quiz-section {
+      margin: 3rem 0;
+      padding: 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--card-radius);
+      position: relative;
+    }
+
+    .quiz-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-question {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .quiz-question:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .q-text {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 1rem;
+    }
+
+    .q-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .q-opt {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      padding: 0.9rem 1.2rem;
+      border-radius: 12px;
+      text-align: left;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .q-opt:hover {
+      background: var(--surface-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .q-opt.correct {
+      background: rgba(46, 213, 115, 0.15);
+      border-color: #2ed573;
+      color: #2ed573;
+    }
+
+    .q-opt.wrong {
+      background: rgba(255, 71, 87, 0.15);
+      border-color: #ff4757;
+      color: #ff4757;
+    }
+
+    .quiz-feedback {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .quiz-feedback.show-correct {
+      display: block;
+      background: rgba(46, 213, 115, 0.15);
+      color: #2ed573;
+    }
+
+    .quiz-feedback.show-wrong {
+      display: block;
+      background: rgba(255, 71, 87, 0.1);
+      color: #ff4757;
+    }
+
+    /* COMPLETED BANNER */
+    .completion-banner {
+      background: linear-gradient(135deg, rgba(91, 91, 240, 0.15), rgba(25, 198, 224, 0.15));
+      border: 1px solid rgba(25, 198, 224, 0.3);
+      border-radius: var(--card-radius);
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-bottom: 5rem;
+      display: none;
+      animation: fadeIn 0.8s ease forwards;
+    } 
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .completion-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .completion-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-next {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--text-main);
+      color: var(--bg);
+      font-weight: 600;
+      padding: 0.9rem 2rem;
+      border-radius: var(--btn-radius);
+      text-decoration: none;
+      margin-top: 1.5rem;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--surface-border);
+      padding: 3rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Background-->
+  <div class="bg-canvas">
+    <div class="grid-bg"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <!--NavBar-->
+  <header class="nav-wrapper">
+    <div class="container">
+      <nav class="navbar">
+        <a class="brand" href="#">
+          <span class="mark"><img src="logo-whdtw.png" alt="Logo"></span>
+          <span>Wait, How Does That Work?</span>
+        </a>
+
+        <div class="nav-actions">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark/Light Mode">
+            ◐
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!--Progress-->
+    <div class="lesson-meta-bar">
+      <div class="pill-badge">
+        <span class="pill-dot"></span> Computer Science • Lesson 1 of 5
+      </div>
+
+      <div class="progress-tracker">
+        <span class="progress-text" id="progressText">0% Completed</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!--lesson header-->
+    <header class="lesson-header">
+      <h1 class="lesson-title">How does ChatGPT <em>think?</em></h1>
+      <p class="lesson-subtitle">Explore the computer science behind large language models, neural networks and the technology that allows ChatGPT to generate human-like responses.</p>
+    </header>
+
+  <!--step 1-->
+  <article class="content-step visible">
+    <span class="step-number">Step 01</span>
+    <h2 class="step-title">The Everyday Mystery</h2>
+    <div class="step-body">
+      <p>You ask ChatGPT a question, and within seconds it produces an answer that can explain physics, write a story or help debug code. It can even adapt its response to the context of your conversation.</p>
+      <p>But how can a computer generate responses that seem so intelligent? Does it understand language in the same way humans do, or is something else happening behind the screen?</p>
+      <p>To understand this, we need to look at the technology behind ChatGPT: artificial intelligence, machine learning and large language models.</p>
+    </div>
+  </article>
+
+  <!--STEP2-->
+  <article class="content-step visible">
+    <span class="step-number">Step 02</span>
+    <h2 class="step-title">The Technology Behind the Response</h2>
+    <div class="step-body">
+      <div class="callout-box">
+        <h3>Key Concepts</h3>
+
+        <div class="callout-title">Artificial Intelligence (AI)</div>
+        <p>A field of computer science focused on creating systems that can perform tasks associated with human intelligence, such as recognizing patterns, understanding language, making predictions and solving problems.</p>
+
+        <div class="callout-title">Machine Learning (ML)</div>
+        <p>A branch of AI that allows computers to learn patterns from data. Instead of being programmed with every possible answer, a model is trained on examples and adjusts its internal parameters to improve its performance on a task.</p>
+
+        <div class="callout-title">Neural Network</div>
+        <p>A computational system made of interconnected artificial neurons arranged in layers. During training, the strengths of the connections (called weights) are adjusted so the network can learn patterns and produce useful outputs.</p>
+
+        <div class="callout-title">Deep Learning</div>
+        <p>A type of machine learning that uses neural networks with multiple layers. These layers process information and learn increasingly complex patterns from data.</p>
+
+        <div class="callout-title">Large Language Model (LLM)</div>
+        <p>A language model, usually built with a deep neural network, that is trained on large amounts of text to learn patterns in language. It can use those patterns to process prompts and generate text, such as the responses produced by ChatGPT.</p>
+      </div>
+
+      <p>These concepts are connected. AI is the broad field; machine learning is one approach within AI; deep learning is a type of machine learning; and modern LLMs use deep learning to work with language.</p>
+
+      <div class="callout-box">
+        <h3>How does ChatGPT generate a response?</h3>
+        <p>When you send a message, the model processes it through several stages:</p>
+        <ol style="margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted);">
+          <li><strong>Tokenization:</strong> The text is divided into smaller units called tokens. A token can be a whole word, part of a word or punctuation.</li>
+          <li><strong>Embeddings:</strong> Each token is converted into a numerical representation (a vector) that the model can process. These representations help encode information about how tokens are used in context.</li>
+          <li><strong>Transformer and attention:</strong> The model uses a neural-network architecture called a Transformer. Its attention mechanism helps it weigh the relationships between tokens and identify which parts of the context are relevant when processing the message.</li>
+          <li><strong>Next-token prediction:</strong> The model calculates probabilities for possible next tokens and selects one according to its generation settings. It repeats this process to build a response token by token.</li>
+          <li><strong>Output:</strong> The generated tokens are converted back into readable text and displayed as a response.</li>
+        </ol>
+      </div>
+
+      <p>During training, the model adjusts its internal parameters to become better at predicting patterns in text. Additional training and feedback can further shape how it follows instructions and responds. This is why it can produce useful, coherent answers without storing a prewritten response for every possible question.</p>
+
+      <p><strong>Important:</strong> Predicting likely next tokens does not mean the model thinks or understands exactly as a human does. It generates responses from patterns learned during training and the context it receives.</p>
+    </div>
+  </article>
+
+  <!--STEP 3-->
+  <article class="content-step visible">
+    <span class="step-number">Step 03</span>
+    <h2 class="step-title">Where Do We Use This Technology?</h2>
+    <div class="step-body">
+      <p>Large language models and other machine-learning systems are already used in many areas of everyday life:</p>
+
+      <div class="example-grid">
+        <div class="example-card">
+          <div class="example-icon">💬</div>
+          <h3 class="example-heading">AI Assistants</h3>
+          <p class="example-description">Tools such as ChatGPT can explain concepts, summarize information, brainstorm ideas and help users write or understand code.</p>
+        </div>
+
+        <div class="example-card">
+          <div class="example-icon">🌐</div>
+          <h3 class="example-heading">Translation and Accessibility</h3>
+          <p class="example-description">Language models can help translate text, simplify complex information and support communication across different languages.</p>
+        </div>
+
+        <div class="example-card">
+          <div class="example-icon">💻</div>
+          <h3 class="example-heading">Programming</h3>
+          <p class="example-description">AI tools can suggest code, explain errors and help developers understand unfamiliar programming concepts. Their output still needs to be checked and tested.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!--QUIZ-->
+  <section class="quiz-section">
+    <h2 class="quiz-title">Test Your Understanding</h2>
+    <p class="quiz-subtitle">Answer these 3 questions to finish this lesson and unlock your progress.</p>
+
+    <div class="quiz-question" id="q1">
+      <div class="q-text">1. What is a Large Language Model (LLM)?</div>
+      <div class="q-options">
+        <button class="q-opt" onclick="checkAnswer(1, false, this)">A database containing a fixed answer to every question.</button>
+        <button class="q-opt" onclick="checkAnswer(1, true, this)">A model trained on large amounts of text to learn language patterns and generate text.</button>
+        <button class="q-opt" onclick="checkAnswer(1, false, this)">A computer program that only translates between languages.</button>
+      </div>
+      <div class="quiz-feedback" id="fb1"></div>
+    </div>
+
+    <div class="quiz-question" id="q2">
+      <div class="q-text">2. What is the main role of the attention mechanism in a Transformer?</div>
+      <div class="q-options">
+        <button class="q-opt" onclick="checkAnswer(2, true, this)">To weigh the relevance of different tokens when processing the context.</button>
+        <button class="q-opt" onclick="checkAnswer(2, false, this)">To convert the model's final response from text into speech.</button>
+        <button class="q-opt" onclick="checkAnswer(2, false, this)">To store every sentence from the training dataset word for word.</button>
+      </div>
+      <div class="quiz-feedback" id="fb2"></div>
+    </div>
+
+    <div class="quiz-question" id="q3">
+      <div class="q-text">3. What happens during next-token prediction?</div>
+      <div class="q-options">
+        <button class="q-opt" onclick="checkAnswer(3, false, this)">The model searches the internet for a complete answer before responding.</button>
+        <button class="q-opt" onclick="checkAnswer(3, false, this)">The model selects a random word without considering the conversation.</button>
+        <button class="q-opt" onclick="checkAnswer(3, true, this)">The model estimates likely next tokens from the context and generates the response step by step.</button>
+      </div>
+      <div class="quiz-feedback" id="fb3"></div>
+    </div>
+  </section>
+
+  <!--COMPLETION BANNER-->
+  <div class="completion-banner" id="completionBanner">
+    <div class="completion-icon">🎉</div>
+    <h2 class="completion-title">Lesson Completed</h2>
+    <p style="color: var(--text-muted);">You've explored the foundations of AI and how large language models generate text.</p>
+    <a href="#" class="btn-next">Next Lesson</a>
+  </div>
+
+  </main>
+
+  <footer>
+    <a class="brand" href="#" style="justify-content: center; margin-bottom: 1rem;">
+      <span class="mark"><img src="logo-whdtw.png" alt="Logo"></span>
+      <span>Wait, How Does That Work?</span>
+    </a>
+    <p>© 2026 Wait, How Does That Work • Interactive Computer Science Series</p>
+  </footer>
+
+  <script>
+
+
+    /* Dark/Light Mode Toggle */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const root = document.documentElement;
+      const currentTheme = root.getAttribute('data-theme');
+      root.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    /* Quiz and Progress */
+    let answeredQuestions = { 1: false, 2: false, 3: false };
+
+    function checkAnswer(qNum, isCorrect, btnEl) {
+      const questionBox = document.getElementById(`q${qNum}`);
+      const feedbackEl = document.getElementById(`fb${qNum}`);
+      const options = questionBox.querySelectorAll('.q-opt');
+
+      options.forEach(opt => opt.disabled = true);
+
+      const correctExplanations = {
+        1: "An LLM learns statistical patterns from large amounts of text and uses them to process and generate language.",
+        2: "Attention helps the model weigh how relevant different tokens are to one another in the current context.",
+        3: "The model repeatedly estimates likely next tokens using the context, gradually building a response."
+      };
+
+      const incorrectExplanations = {
+        1: "An LLM is not simply a fixed answer database or a translation-only program; it learns patterns in language from training data.",
+        2: "Attention processes relationships and relevance between tokens; it does not convert text into speech or store training sentences word for word.",
+        3: "Next-token prediction uses the context to estimate what token is likely to come next; it is not a random selection or necessarily an internet search."
+      };
+
+      if (isCorrect) {
+        btnEl.classList.add('correct');
+        feedbackEl.textContent = "Correct. " + correctExplanations[qNum];
+        feedbackEl.className = "quiz-feedback show-correct";
+        answeredQuestions[qNum] = true;
+      } else {
+        btnEl.classList.add('wrong');
+        feedbackEl.textContent = "Not quite. " + incorrectExplanations[qNum];
+        feedbackEl.className = "quiz-feedback show-wrong";
+      }
+
+      checkCompletion();
+    }
+
+    function checkCompletion() {
+      if (answeredQuestions[1] && answeredQuestions[2] && answeredQuestions[3]) {
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressText').textContent = '100% Completed';
+
+        const banner = document.getElementById('completionBanner');
+        banner.style.display = 'block';
+        banner.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    /* Scroll Reveal Effect for Content Steps */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.content-step').forEach(step => observer.observe(step));
+  </script>
+
+</body>
+</html>

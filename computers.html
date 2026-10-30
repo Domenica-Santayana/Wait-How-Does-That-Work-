@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How come my calls sound so good? — Computers | Wait, How Does That Work?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+        --bg:#07080d;
+        --surface: #0f111a;
+        --surface-border: rgba(255, 255, 255, 0.08);
+        --surface-hover: rgba(255, 255, 255, 0.04);
+        --text-main: #f0f2f8;
+        --text-muted: #8b92a5;
+        --accent-gradient: linear-gradient(100deg, #5b5bf0, #19c6e0);
+        --accent-cyan: #19c6e0;
+        --accent-purple: #8b5cf6;
+        --accent-glow: rgba(25, 198, 224, 0.25);
+        --grid-line: rgba(255, 255, 255, 0.04);
+        --card-radius: 20px;
+        --btn-radius: 9999px;
+        --font-heading: 'Instrument Serif', Georgia, serif;
+        --font-body: 'Inter', -apple-system, Segoe UI, sans-serif;
+        --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #f3f2ee;
+      --surface: #ffffff;
+      --surface-border: rgba(0, 0, 0, 0.08);
+      --surface-hover: rgba(0, 0, 0, 0.02);
+      --text-main: #0e1017;
+      --text-muted: #62697b;
+      --accent-glow: rgba(91, 91, 240, 0.15);
+      --grid-line: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Reset & Base Styles */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: var(--font-body);
+        background-color: var(--bg);
+        color: var(--text-main);
+        line-height: 1.6;
+        overflow-x: hidden;
+        min-height: 100vh;
+        transition: background-color 0.4s, color 0.4s;
+    }
+
+    /* Background and Grid */
+    .bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .grid-bg {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 20%, transparent 80%);
+    }
+
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.35;
+    }
+
+    .glow-1 {
+      width: 500px;
+      height: 500px;
+      background: #5b5bf0;
+      top: -100px;
+      left: 20%;
+    }
+
+    .glow-2 {
+      width: 450px;
+      height: 450px;
+      background: #19c6e0;
+      top: 400px;
+      right: -100px;
+    }
+
+    /* Layout Container */
+    .container {
+      width: 100%;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header Styles */
+    .nav-wrapper {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(7, 8, 13, 0.7);
+      border-bottom: 1px solid var(--surface-border);
+      transition: background-color 0.4s ease;
+    }
+
+    [data-theme="light"] .nav-wrapper {
+      background: rgba(243, 242, 238, 0.8);
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+
+    .mark {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: transparent;
+      flex-shrink: 0;
+    }
+
+    .mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .theme-toggle {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Progress Bar Styles */
+    .lesson-meta-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      margin-top: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.9rem;
+      border-radius: var(--btn-radius);
+      font-size: 0.820rem;
+      font-weight: 500;
+      background: rgba(91, 91, 240, 0.1);
+      border: 1px solid rgba(91, 91, 240, 0.3);
+      color: #7b7bff;
+    }
+
+    [data-theme="light"] .pill-badge {
+      color: #4343d0;
+      background: rgba(91, 91, 240, 0.1);
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .progress-tracker {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .progress-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background-color: var(--surface-border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-gradient);
+      border-radius: 10px;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* HERO AND TITLE OF LESSON */
+    .lesson-header {
+      padding: 3rem 0 2rem;
+      text-align: center;
+    }
+
+    .lesson-title {
+      font-family: var(--font-body);
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.02px;
+      margin-bottom: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .lesson-title em {
+      font-style: italic;
+      font-family: var(--font-heading);
+      font-weight: 400;
+      background: var(--accent-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      padding-right: 0.15em;
+    }
+
+    .lesson-subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 630px;
+      margin: 0 auto;
+      font-weight: 400;
+    }
+
+    /* LESSON CONTENT STYLES */
+    .content-step {
+      margin: 4rem 0;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .content-step.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .step-number {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .step-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.3;
+    }
+
+    .step-body {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    .step-body p {
+      margin-bottom: 1rem;
+    }
+
+    /* highlight box */
+    .callout-box {
+      background: var(--surface);
+      border-left: 4px solid var(--accent-cyan);
+      padding: 1.5rem;
+      border-radius: 0 16px 16px 0;
+      margin: 2rem 0;
+      border-top: 1px solid var(--surface-border);
+      border-right: 1px solid var(--surface-border);
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .callout-title {
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* real world examples */
+    .example-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+
+    .example-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      transition: var(--transition-smooth);
+    }
+
+    .example-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .example-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .example-heading {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .example-description {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    /* Interactive Check */
+    .quiz-section {
+      margin: 3rem 0;
+      padding: 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--card-radius);
+      position: relative;
+    }
+
+    .quiz-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .quiz-subtitle {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .quiz-question {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+    }
+
+    .quiz-question:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .q-text {
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 1rem;
+    }
+
+    .q-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .q-opt {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      padding: 0.9rem 1.2rem;
+      border-radius: 12px;
+      text-align: left;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: var(--transition-smooth);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .q-opt:hover {
+      background: var(--surface-hover);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .q-opt.correct {
+      background: rgba(46, 213, 115, 0.15);
+      border-color: #2ed573;
+      color: #2ed573;
+    }
+
+    .q-opt.wrong {
+      background: rgba(255, 71, 87, 0.15);
+      border-color: #ff4757;
+      color: #ff4757;
+    }
+
+    .quiz-feedback {
+      display: none;
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+    }
+
+    .quiz-feedback.show-correct {
+      display: block;
+      background: rgba(46, 213, 115, 0.15);
+      color: #2ed573;
+    }
+
+    .quiz-feedback.show-wrong {
+      display: block;
+      background: rgba(255, 71, 87, 0.1);
+      color: #ff4757;
+    }
+
+    /* COMPLETED BANNER */
+    .completion-banner {
+      background: linear-gradient(135deg, rgba(91, 91, 240, 0.15), rgba(25, 198, 224, 0.15));
+      border: 1px solid rgba(25, 198, 224, 0.3);
+      border-radius: var(--card-radius);
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-bottom: 5rem;
+      display: none;
+      animation: fadeIn 0.8s ease forwards;
+    } 
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .completion-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .completion-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .btn-next {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--text-main);
+      color: var(--bg);
+      font-weight: 600;
+      padding: 0.9rem 2rem;
+      border-radius: var(--btn-radius);
+      text-decoration: none;
+      margin-top: 1.5rem;
+      transition: var(--transition-smooth);
+    }
+
+    .btn-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--surface-border);
+      padding: 3rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Dynamic Background-->
+  <div class="bg-canvas">
+    <div class="grid-bg"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+  </div>
+
+  <!--NavBar-->
+  <header class="nav-wrapper">
+    <div class="container">
+      <nav class="navbar">
+        <a class="brand" href="#">
+          <span class="mark"><img src="logo-whdtw.png" alt="Logo"></span>
+          <span>Wait, How Does That Work?</span>
+        </a>
+
+        <div class="nav-actions">
+          <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark/Light Mode">
+            ◐
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!--Progress-->
+    <div class="lesson-meta-bar">
+      <div class="pill-badge">
+        <span class="pill-dot"></span> Physics • Lesson 1 of 5
+      </div>
+
+      <div class="progress-tracker">
+        <span class="progress-text" id="progressText">0% Completed</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!--lesson header-->
+    <header class="lesson-header">
+      <h1 class="lesson-title">How come my calls sound so <em>good</em></h1>
+      <p class="lesson-subtitle">Discover how softwares analyse your sound waves and make their science to make your voice sound just fine.</p>
+    </header>
+
+  <!--step 1-->
+  <article class="content-step visible">
+    <span class="step-number">Step 01</span>
+    <h2 class="step-title">The Everyday Mystery</h2>
+    <div class="step-body">
+      <p>Imagine you're attending an important online meeting from a busy café. People are talking, cars are passing outside, and someone is typing on a keyboard nearby. Despite all these chaotic sounds, the person on the other side of the call can hear your voice clearly. But how?</p>
+      <p>Your microphone captures more than just your voice. It also captures the surrounding sounds. So, how does your device distinguish what you want people to hear from everything else? The answer lies in the physics of sound waves and modern audio processing technology.</p>
+    </div>
+  </article>
+
+  <!--STEP2-->
+  <article class="content-step visible">
+    <span class="step-number">Step 02</span>
+    <h2 class="step-title">The Science Behind Your Voice</h2>
+    <div class="step-body">
+      <div class="callout-box">
+         <h3>Key Concepts</h3>
+      <div class="callout-title">Sound Waves</div>
+        <p>These are mechanical vibrations in air that carry sound. These have the characteristics of frequency and amplitude.</p>
+      <div class="callout-title">Frequency</div>
+        <p>How many times does a wave oscillate per second. As a matter of fact, frequency is directly proportional to pitch, so higher frequency means higher pitch and vice versa.</p>
+      <div class="callout-title">Amplitude</div>
+        <p>Maximum variation of a wave from its equilibrium position. In spund waves, it can describe the maximum variation in air pressure. Greater amplitude generally corresponds to greater perceived loudness, assuming others conditions remain comparable.</p>
+      <div class="callout-title">SNR (Signal to Noise Ratio)</div>
+        <p>Measures how strong is the voice in comparison to other sounds. It is represented in dB.</p>
+      </div>
+        <p><strong>The Technologies That Make it Posible</strong></p>
+        <p>So now that we understand the physics behind sound, we can explore how devices use it.</p>
+        <ul style="margin-left: 1.5rem; margin-bottom: 1rem; color: var(--text-muted);">
+          <li><strong>Noise Suppression:</strong> Reduces unwanted background sounds, such as traffic, keyboard typing and environmental noise, while attempting to preserve the speaker's voice.
+          <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+            <li><strong>Audio Input:</strong> The microphone captures sound and converts it into digital audio data.</li>
+            <li><strong>Analysis:</strong> The system analyzes the audio, often dividing it into smaller frames and examining their frequency components.</li>
+            <li><strong>Noise Detection:</strong> An algorithm estimates which parts of the audio are likely to be unwanted background noise.</li>
+            <li><strong>Filtering:</strong> The system reduces the estimated noise while attempting to preserve the speech signal.</li>
+            <li><strong>Output:</strong> The processed audio is reconstructed, producing a clearer voice.</li>
+          </ol>
+          </li>
+          <li style="margin-top: 1rem;"><strong>Voice Isolation:</strong>Uses audio processing techniques and machine learning to distinguish the target voice from surrounding sounds and prioritize it over background noise.
+          <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+            <li><strong>Audio Input:</strong> The microphone captures the target speaker's voice along with other sounds.</li>
+            <li><strong>Feature Extraction:</strong> The system analyzes characteristics such as frequency patterns, timing and speech variations.</li>
+            <li><strong>Voice Recognition:</strong> A trained machine learning model estimates which parts of the audio belong to the target voice.</li>
+            <li><strong>Separation:</strong> The algorithm separates the estimated voice from surrounding sounds, reducing unwanted audio.</li>
+            <li><strong>Output:</strong> The system produces audio in which the target speaker's voice is more prominent.</li>
+          </ol>
+          </li>
+        </ul>
+        <p>To sum up, your device receives a mixture of sound waves: your voice and background noise. Therefore, audio processing algorithms analyze this mixture and estimate which components belong to the desired voice. They then reduce unwanted sounds while preserving as much speech information as possible. This improves the effective signal-to-noise ratio.</p>
+    </div>
+  </article>
+  
+  <!--STEP 3-->
+  <article class="content-step visible">
+    <span class="step-number">Step 03</span>
+    <h2 class="step-title">Real World Applications</h2>
+    <div class="step-body">
+      <p>Engineers use these principles to improve communication in environments where background noise can interfere with speech:</p>
+
+      <div class="example-grid">
+        <div class="example-card">
+          <div class="example-icon">✈️</div>
+          <h3 class="example-heading">Aviation Headsets</h3>
+          <p class="example-description">Help pilots communicate with air traffic control despite engine noise and other sounds inside the cockpit.</p>
+        </div>
+
+        <div class="example-card">
+          <div class="example-icon">💻</div>
+          <h3 class="example-heading">Video Conferencing</h3>
+          <p class="example-description">Technologies such as noise suppression help make conversations clearer during online meetings, even in noisy environments.</p>
+        </div>
+
+        <div class="example-card">
+          <div class="example-icon">🎤</div>
+          <h3 class="example-heading">Recording Studios</h3>
+          <p class="example-description">Audio engineers use microphones, filtering and digital signal processing to isolate vocals and reduce unwanted sounds.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!--QUIZ-->
+  <section class="quiz-section">
+    <h2 class="quiz-title">Test Your Understanding</h2>
+    <p class="quiz-subtitle">Answer these 2 questions to finish this lesson and unlock your progress.</p>
+
+    <!--Q1-->
+    <div class="quiz-question" id="q1">
+      <div class="q-text">1. What does a higher Signal-to-Noise Ratio (SNR) indicate?</div>
+      <div class="q-options">
+        <button class="q-opt" onclick="checkAnswer(1, false, this)">The background noise is stronger than the voice.</button>
+        <button class="q-opt" onclick="checkAnswer(1, true, this)">The voice is stronger relative to background noise.</button>
+        <button class="q-opt" onclick="checkAnswer(1, false, this)">The sound wave has a higher frequency.</button>
+      </div>
+      <div class="quiz-feedback" id="fb1"></div>
+    </div>
+
+    <!--Q2-->
+    <div class="quiz-question" id="q2">
+      <div class="q-text">2. What is the main purpose of noise suppression?</div>
+      <div class="q-options">
+        <button class="q-opt" onclick="checkAnswer(2, true, this)">To reduce unwanted background sounds while preserving speech</button>
+        <button class="q-opt" onclick="checkAnswer(2, false, this)">To increase the frequency of the speaker's voice</button>
+        <button class="q-opt" onclick="checkAnswer(2, false, this)">To eliminate all sounds below a certain amplitude</button>
+      </div>
+      <div class="quiz-feedback" id="fb2"></div>
+    </div>
+  </section>
+
+  <!--COMPLETION BANNER-->
+  <div class="completion-banner" id="completionBanner">
+    <div class="completion-icon">🎉</div>
+    <h2 class="completion-title">Lesson Completed</h2>
+    <p style="color: var(--text-muted);">You've mastered Buoyancy and Achimedes' Principle</p>
+    <a href="#" class="btn-next">Next Lesson</a>
+  </div>
+
+  </main>
+
+  <footer>
+    <a class="brand" href="#" style="justify-content: center; margin-bottom: 1rem;">
+      <span class="mark"><img src="logo-whdtw.png" alt="Logo"></span>
+      <span>Wait, How Does That Work?</span>
+    </a>
+    <p>© 2026 Wait, How Does That Work • Interactive Physics Series</p>
+  </footer>
+
+  <script>
+    /* Dark/Light Mode Toggle */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+      const root = document.documentElement;
+      const currentTheme = root.getAttribute('data-theme');
+      root.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    /* Quiz and Progress */
+    let answeredQuestions = { 1: false, 2: false };
+
+    function checkAnswer(qNum, isCorrect, btnEl) {
+      const questionBox = document.getElementById(`q${qNum}`);
+      const feedbackEl = document.getElementById(`fb${qNum}`);
+      const options = questionBox.querySelectorAll('.q-opt');
+
+      options.forEach(opt => opt.disabled = true);
+
+      if (isCorrect) {
+        btnEl.classList.add('correct');
+        feedbackEl.textContent = "Correct. Pushing away enough water creates an upward force equal to the ship's weight.";
+        feedbackEl.className = "quiz-feedback show-correct";
+        answeredQuestions[qNum] = true;
+      } else {
+        btnEl.classList.add('wrong');
+        feedbackEl.textContent = "Not quite. Remember Archimedes' principle: it's all about displacing enough fluid weight.";
+        feedbackEl.className = "quiz-feedback show-wrong";
+      }
+
+      checkCompletion();
+    }
+
+    function checkCompletion() {
+      if (answeredQuestions[1] && answeredQuestions[2]) {
+        // Update progress bar to 100%
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressText').textContent = '100% Completed';
+
+        // Show completion banner
+        const banner = document.getElementById('completionBanner');
+        banner.style.display = 'block';
+        banner.scrollIntoView({ behavior: 'smooth'});
+      }
+    }
+
+    /* Scroll Reveal Effect for Content Steps */
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.content-step').forEach(step => observer.observe(step));
+  </script>
+
+</body>
+</html>
