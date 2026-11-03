@@ -9,10 +9,10 @@ Since, I was little, I developed this passion for learning random things. Based 
 
 ## Features of the Website
 
-- Interactive design: there are quizes, buttons and fancy animations which are really cool btw
+- Interactive design: there are quizes, buttons
 - Smooth scrolling
-- Nav bar with a light/dark theme changer
-- index.html (for full conceptualization, faq, courses, demo), physics.html (lesson explaining why things float, archimedes principle, examples, questions), computers.html (how does voice enhancement work, noise suppresion, vocal isolation, examples and questions), and ai.html (why is chatgpt inteligent, ai, ml, llm, patterns recognition, examples and questions)
+- Nav bar
+- index.html (for full conceptualization, faq, courses, ), physics.html (lesson explaining why things float, archimedes principle, examples, questions), computers.html (how does voice enhancement work, noise suppresion, vocal isolation, examples and questions), and ai.html (why is chatgpt inteligent, ai, ml, llm, patterns recognition, examples and questions)
 - Method, FAQ sections
 - Call to action section with bottons 
 
