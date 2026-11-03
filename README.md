@@ -13,14 +13,13 @@ Since, I was little, I developed this passion for learning random things. Based 
 - Smooth scrolling
 - Nav bar with a light/dark theme changer
 - index.html (for full conceptualization, faq, courses, demo), physics.html (lesson explaining why things float, archimedes principle, examples, questions), computers.html (how does voice enhancement work, noise suppresion, vocal isolation, examples and questions), and ai.html (why is chatgpt inteligent, ai, ml, llm, patterns recognition, examples and questions)
-- Method, FAQ, and Demo sections
+- Method, FAQ sections
 - Call to action section with bottons 
 
 ## Project Structure
 index.html
 - introduction
 - method
-- demo
 - courses
 - faq
 - call to action
